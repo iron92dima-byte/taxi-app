@@ -3,15 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-    <title>Такси Glass — Telegram Mini App</title>
-    <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+    <title>Такси Glass — Telegram</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800;900&display=swap');
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
         ::-webkit-scrollbar{display:none;}
-        body { background: #000; overflow: hidden; font-family: 'Nunito', sans-serif; margin: 0; }
+        body { margin: 0; background: #000; overflow: hidden; font-family: 'Nunito', sans-serif; }
         #root { height: 100vh; display: flex; justify-content: center; align-items: center; }
 
         @keyframes aurora1{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(55px,-38px) scale(1.14)}66%{transform:translate(-38px,28px) scale(.9)}}
@@ -27,6 +24,9 @@
         .tile{cursor:pointer;transition:transform .15s cubic-bezier(.34,1.56,.64,1),opacity .1s;}
         .tile:active{transform:scale(.9);opacity:.8;}
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
 <div id="root"></div>
@@ -36,32 +36,32 @@
 
     const G = {
         sheet: {
-            background:"rgba(255,255,255,0.24)",
-            backdropFilter:"blur(50px) saturate(190%)",
-            WebkitBackdropFilter:"blur(50px) saturate(190%)",
-            border:"1px solid rgba(255,255,255,0.58)",
-            boxShadow:"0 -2px 40px rgba(0,0,0,0.12), inset 0 1.5px 0 rgba(255,255,255,0.88), inset 0 -1px 0 rgba(255,255,255,0.12)",
+            background: "rgba(255,255,255,0.24)",
+            backdropFilter: "blur(50px) saturate(190%)",
+            WebkitBackdropFilter: "blur(50px) saturate(190%)",
+            border: "1px solid rgba(255,255,255,0.58)",
+            boxShadow: "0 -2px 40px rgba(0,0,0,0.12), inset 0 1.5px 0 rgba(255,255,255,0.88), inset 0 -1px 0 rgba(255,255,255,0.12)",
         },
         card: {
-            background:"rgba(255,255,255,0.20)",
-            backdropFilter:"blur(36px) saturate(180%)",
-            WebkitBackdropFilter:"blur(36px) saturate(180%)",
-            border:"1px solid rgba(255,255,255,0.50)",
-            boxShadow:"inset 0 1.5px 0 rgba(255,255,255,0.75), 0 4px 24px rgba(0,0,0,0.10)",
+            background: "rgba(255,255,255,0.20)",
+            backdropFilter: "blur(36px) saturate(180%)",
+            WebkitBackdropFilter: "blur(36px) saturate(180%)",
+            border: "1px solid rgba(255,255,255,0.50)",
+            boxShadow: "inset 0 1.5px 0 rgba(255,255,255,0.75), 0 4px 24px rgba(0,0,0,0.10)",
         },
         pill: {
-            background:"rgba(255,255,255,0.22)",
-            backdropFilter:"blur(28px) saturate(170%)",
-            WebkitBackdropFilter:"blur(28px) saturate(170%)",
-            border:"1px solid rgba(255,255,255,0.48)",
-            boxShadow:"inset 0 1px 0 rgba(255,255,255,0.7), 0 2px 12px rgba(0,0,0,0.09)",
+            background: "rgba(255,255,255,0.22)",
+            backdropFilter: "blur(28px) saturate(170%)",
+            WebkitBackdropFilter: "blur(28px) saturate(170%)",
+            border: "1px solid rgba(255,255,255,0.48)",
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.7), 0 2px 12px rgba(0,0,0,0.09)",
         },
         btn: (clr) => ({
-            background:`linear-gradient(145deg,${clr}e8,${clr}b0)`,
-            backdropFilter:"blur(20px)",
-            WebkitBackdropFilter:"blur(20px)",
-            border:"1px solid rgba(255,255,255,0.35)",
-            boxShadow:`inset 0 1.5px 0 rgba(255,255,255,0.4), 0 8px 28px ${clr}50`,
+            background: `linear-gradient(145deg,${clr}e8,${clr}b0)`,
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
+            border: "1px solid rgba(255,255,255,0.35)",
+            boxShadow: `inset 0 1.5px 0 rgba(255,255,255,0.4), 0 8px 28px ${clr}50`,
         }),
     };
 
