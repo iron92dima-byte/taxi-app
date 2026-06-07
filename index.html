@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <title>Такси Glass — Telegram</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+        ::-webkit-scrollbar{display:none;}
+        body { margin: 0; background: #000; overflow: hidden; font-family: 'Nunito', sans-serif; }
+        #root { height: 100vh; display: flex; justify-content: center; align-items: center; }
+
+        @keyframes aurora1{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(55px,-38px) scale(1.14)}66%{transform:translate(-38px,28px) scale(.9)}}
+        @keyframes aurora2{0%,100%{transform:translate(0,0) scale(1.08)}33%{transform:translate(-65px,46px) scale(.86)}66%{transform:translate(46px,-32px) scale(1.18)}}
+        @keyframes aurora3{0%,100%{transform:translate(0,0) scale(.96)}50%{transform:translate(36px,55px) scale(1.08)}}
+        @keyframes pinFloat{0%,100%{transform:translate(-50%,-100%) translateY(0)}50%{transform:translate(-50%,-100%) translateY(-7px)}}
+        @keyframes sheetUp{from{transform:translateY(100%);opacity:.6}to{transform:translateY(0);opacity:1}}
+        @keyframes fadeScale{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+        @keyframes ringPop{0%{transform:scale(.5);opacity:.9}100%{transform:scale(2.4);opacity:0}}
+        @keyframes dotBounce{0%,100%{transform:scale(1)}50%{transform:scale(.32)}}
+        @keyframes carFloat{0%,100%{transform:translateY(0) rotate(-1.5deg)}50%{transform:translateY(-9px) rotate(1.5deg)}}
+        @keyframes starPop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+        .tile{cursor:pointer;transition:transform .15s cubic-bezier(.34,1.56,.64,1),opacity .1s;}
+        .tile:active{transform:scale(.9);opacity:.8;}
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useRef, useEffect } = React;
+
+const G = {
+    sheet: {
+        background: "rgba(255,255,255,0.24)",
+        backdropFilter: "blur(50px) saturate(190%)",
+        WebkitBackdropFilter: "blur(50px) saturate(190%)",
+        border: "1px solid rgba(255,255,255,0.58)",
+        boxShadow: "0 -2px 40px rgba(0,0,0,0.12), inset 0 1.5px 0 rgba(255,255,255,0.88), inset 0 -1px 0 rgba(255,255,255,0.12)",
+    },
+    card: {
+        background: "rgba(255,255,255,0.20)",
+        backdropFilter: "blur(36px) saturate(180%)",
+        WebkitBackdropFilter: "blur(36px) saturate(180%)",
+        border: "1px solid rgba(255,255,255,0.50)",
+        boxShadow: "inset 0 1.5px 0 rgba(255,255,255,0.75), 0 4px 24px rgba(0,0,0,0.10)",
+    },
+    pill: {
+        background: "rgba(255,255,255,0.22)",
+        backdropFilter: "blur(28px) saturate(170%)",
+        WebkitBackdropFilter: "blur(28px) saturate(170%)",
+        border: "1px solid rgba(255,255,255,0.48)",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.7), 0 2px 12px rgba(0,0,0,0.09)",
+    },
+    btn: (clr) => ({
+        background: `linear-gradient(145deg,${clr}e8,${clr}b0)`,
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
+        border: "1px solid rgba(255,255,255,0.35)",
+        boxShadow: `inset 0 1.5px 0 rgba(255,255,255,0.4), 0 8px 28px ${clr}50`,
+    }),
+};
+
+const STEPS = { HOME: "home", SELECT: "select", CONFIRM: "confirm", SEARCH: "search", FOUND: "found", RIDE: "ride", RATE: "rate" };
+const TARIFFS = [
+    { id: "lite", e: "🛵", n: "Лайт", s: "Мото", t: "2 мин", p: 89, c: "#5E9FFF" },
+    { id: "eco", e: "🚗", n: "Эконом", s: "Стандарт", t: "4 мин", p: 173, c: "#34C759" },
+    { id: "comfort", e: "🚙", n: "Комфорт", s: "Бизнес", t: "5 мин", p: 248, c: "#FF9F0A" },
+    { id: "biz", e: "🏎", n: "Бизнес", s: "Премиум", t: "7 мин", p: 420, c: "#BF5AF2" },
+    { id: "vip", e: "🌟", n: "VIP", s: "Люкс", t: "9 мин", p: 780, c: "#FF375F" },
+];
+const QUICK = ["🏠 Дом", "💼 Офис", "✈️ Аэропорт", "🏨 Отель"];
+
+function Aurora() { /* ... полный код ... */ 
+    return (
+        <div style={{position:"absolute", inset:0, overflow:"hidden"}}>
+            <div style={{position:"absolute", inset:0, background:"linear-gradient(155deg,#d6eaff 0%,#ecdeff 28%,#ffd6ec 54%,#d6ffee 78%,#fff4d6 100%)"}}/>
+            {[
+                {c:"rgba(100,175,255,0.54)", w:520, h:520, l:-100, t:-80, a:"aurora1 12s ease-in-out infinite"},
+                {c:"rgba(190,120,255,0.48)", w:440, h:440, l:180, t:-65, a:"aurora2 16s ease-in-out infinite"},
+                {c:"rgba(70,220,160,0.42)", w:380, h:380, l:-60, t:200, a:"aurora3 10s ease-in-out infinite"},
+                {c:"rgba(255,160,90,0.36)", w:350, h:350, l:205, t:225, a:"aurora1 19s ease-in-out infinite reverse"},
+                {c:"rgba(255,90,165,0.30)", w:300, h:300, l:100, t:400, a:"aurora2 14s ease-in-out infinite 2s"},
+            ].map((b,i) => <div key={i} style={{position:"absolute", left:b.l, top:b.t, width:b.w, height:b.h, borderRadius:"50%", background:b.c, filter:"blur(68px)", animation:b.a}}/>)}
+            <div style={{position:"absolute", inset:0, background:"linear-gradient(to bottom,transparent 0%,rgba(255,255,255,0.05) 100%)"}}/>
+        </div>
+    );
+}
+
+function Map({ step }) {
+    const hasRoute = step !== STEPS.HOME;
+    return (
+        <div style={{position:"absolute", inset:0, overflow:"hidden"}}>
+            <Aurora/>
+            <svg width="100%" height="100%" style={{position:"absolute", inset:0}}>
+                <defs>
+                    <filter id="rf"><feGaussianBlur stdDeviation="1.4"/></filter>
+                    <linearGradient id="rg" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#5E9FFF" stopOpacity=".9"/>
+                        <stop offset="100%" stopColor="#BF5AF2" stopOpacity=".9"/>
+                    </linearGradient>
+                </defs>
+                {[
+                    ["M0,215 Q200,196 360,210 T700,203",30],
+                    ["M196,0 L191,650",24],
+                    ["M376,0 L371,650",17],
+                    ["M547,50 L542,650",12],
+                    ["M0,376 Q352,359 700,372",11],
+                ].map(([d,w],i) => (
+                    <g key={i}>
+                        <path d={d} stroke="rgba(255,255,255,0.28)" strokeWidth={w+5} fill="none" filter="url(#rf)"/>
+                        <path d={d} stroke="rgba(255,255,255,0.70)" strokeWidth={w} fill="none"/>
+                        <path d={d} stroke="rgba(255,255,255,0.40)" strokeWidth={1} fill="none" strokeDasharray="12,9"/>
+                    </g>
+                ))}
+                {[[56,126,54,66],[433,144,44,58],[491,227,38,50],[106,299,50,36],[317,287,36,42],[597,177,44,52],[157,167,30,36]].map(([x,y,w,h],i) => (
+                    <g key={i}>
+                        <rect x={x} y={y} width={w} height={h} rx="7" fill="rgba(255,255,255,0.38)"/>
+                        <rect x={x} y={y} width={w} height={h} rx="7" fill="none" stroke="rgba(255,255,255,0.72)" strokeWidth=".8"/>
+                        <rect x={x+w*.08} y={y} width={w*.13} height={h*.55} rx="2" fill="rgba(255,255,255,0.25)"/>
+                    </g>
+                ))}
+                {hasRoute && (
+                    <g>
+                        <path d="M191,332 Q245,285 301,250 Q345,218 371,184" stroke="rgba(255,255,255,0.45)" strokeWidth="6" fill="none" strokeLinecap="round"/>
+                        <path d="M191,332 Q245,285 301,250 Q345,218 371,184" stroke="url(#rg)" strokeWidth="2.5" fill="none" strokeDasharray="7,5" strokeLinecap="round"/>
+                    </g>
+                )}
+            </svg>
+            <div style={{position:"absolute", left:191, top:332, animation:"pinFloat 3s ease-in-out infinite", transform:"translate(-50%,-100%)"}}>
+                <div style={{...G.card, borderRadius:"50% 50% 50% 0", width:32, height:32, transform:"rotate(-45deg)", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 6px 22px rgba(94,159,255,0.45), inset 0 1.5px 0 rgba(255,255,255,0.9)"}}>
+                    <div style={{transform:"rotate(45deg)", width:11, height:11, borderRadius:"50%", background:"linear-gradient(135deg,#5E9FFF,#7B60FF)", boxShadow:"0 2px 8px rgba(94,159,255,0.6)"}}/>
+                </div>
+                <div style={{width:2, height:9, background:"rgba(94,159,255,0.55)", margin:"0 auto"}}/>
+            </div>
+            {hasRoute && (
+                <div style={{position:"absolute", left:371, top:184, transform:"translate(-50%,-100%)"}}>
+                    <div style={{...G.card, borderRadius:"50% 50% 50% 0", width:30, height:30, transform:"rotate(-45deg)", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 6px 22px rgba(255,63,89,0.4), inset 0 1.5px 0 rgba(255,255,255,0.9)"}}>
+                        <div style={{transform:"rotate(45deg)", width:10, height:10, borderRadius:"50%", background:"linear-gradient(135deg,#FF375F,#FF9F0A)"}}/>
+                    </div>
+                    <div style={{width:2, height:8, background:"rgba(255,63,89,0.5)", margin:"0 auto"}}/>
+                </div>
+            )}
+            {step === STEPS.HOME && [[118,200],[298,160],[453,284],[554,204],[78,312]].map(([x,y],i) => (
+                <div key={i} style={{position:"absolute", left:x, top:y, fontSize:13, opacity:.5, filter:"drop-shadow(0 2px 6px rgba(0,0,0,0.12))"}}>🚗</div>
+            ))}
+            {step === STEPS.RIDE && (
+                <div style={{position:"absolute", left:278, top:248, fontSize:24, animation:"carFloat 2.5s ease-in-out infinite", filter:"drop-shadow(0 4px 16px rgba(0,0,0,0.18))"}}>🚗</div>
+            )}
+            <div style={{position:"absolute", bottom:0, left:0, right:0, height:"52%", background:"linear-gradient(to bottom,transparent,rgba(225,238,255,0.22))"}}/>
+        </div>
+    );
+}
+
+function StatusBar({ onBack, showBack }) {
+    return (
+        <div style={{position:"absolute", top:0, left:0, right:0, padding:"16px 22px 0", display:"flex", justifyContent:"space-between", alignItems:"center", zIndex:20}}>
+            {showBack ? (
+                <div onClick={onBack} className="tile" style={{...G.pill, borderRadius:50, width:42, height:42, display:"flex", alignItems:"center", justifyContent:"center", fontSize:17, color:"rgba(0,0,0,0.65)"}}>←</div>
+            ) : (
+                <div style={{...G.pill, borderRadius:16, padding:"8px 16px"}}>
+                    <span style={{fontSize:15, fontWeight:900, background:"linear-gradient(135deg,#5E9FFF,#BF5AF2)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", letterSpacing:.2}}>LUXRIDE</span>
+                </div>
+            )}
+            <div style={{...G.pill, borderRadius:50, padding:"8px 16px"}}>
+                <span style={{fontSize:13, fontWeight:700, color:"rgba(0,0,0,0.58)"}}>💳 ₽3 800</span>
+            </div>
+        </div>
+    );
+}
+
+function ETAChip() {
+    return (
+        <div style={{position:"absolute", top:74, left:22, ...G.card, borderRadius:22, padding:"11px 18px", display:"flex", gap:14, alignItems:"center", zIndex:20, animation:"fadeScale .4s ease", boxShadow:"0 8px 28px rgba(0,0,0,0.09), inset 0 1.5px 0 rgba(255,255,255,0.92)"}}>
+            <div style={{textAlign:"center"}}>
+                <div style={{fontSize:22, fontWeight:900, background:"linear-gradient(135deg,#5E9FFF,#7B60FF)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent"}}>4</div>
+                <div style={{fontSize:8, color:"rgba(0,0,0,0.3)", textTransform:"uppercase", letterSpacing:1.5, fontWeight:700}}>мин</div>
+            </div>
+            <div style={{width:1, height:30, background:"rgba(0,0,0,0.07)"}}/>
+            <div>
+                <div style={{fontSize:13, fontWeight:800, color:"rgba(0,0,0,0.68)"}}>Место подачи</div>
+                <div style={{fontSize:11, fontWeight:700, background:"linear-gradient(90deg,#5E9FFF,#BF5AF2)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent"}}>Изменить →</div>
+            </div>
+        </div>
+    );
+}
+
+function GlassInput({ icon, placeholder, value, onChange, readOnly }) {
+    const [f, setF] = useState(false);
+    return (
+        <div style={{...G.pill, borderRadius:17, padding:"13px 17px", display:"flex", alignItems:"center", gap:12, transition:"all .2s", boxShadow: f ? "0 0 0 2.5px rgba(94,159,255,0.38),0 6px 24px rgba(0,0,0,0.09), inset 0 1.5px 0 rgba(255,255,255,0.82)" : "0 3px 14px rgba(0,0,0,0.055), inset 0 1.5px 0 rgba(255,255,255,0.8)"}}>
+            <span style={{fontSize:8, opacity:.5}}>{icon}</span>
+            <input readOnly={readOnly} value={value} onChange={onChange} placeholder={placeholder} onFocus={()=>setF(true)} onBlur={()=>setF(false)} style={{background:"transparent", border:"none", outline:"none", fontSize:14, fontFamily:"'Nunito',sans-serif", fontWeight:600, color:"rgba(0,0,0,0.72)", flex:1}}/>
+        </div>
+    );
+}
+
+function CTABtn({ label, onClick, color = "#5E9FFF", disabled }) {
+    return (
+        <button onClick={onClick} className="tile" style={{width:"100%", padding:"17px", borderRadius:22, border:"none", cursor:disabled ? "default" : "pointer", fontFamily:"'Nunito',sans-serif", fontSize:16, fontWeight:900, letterSpacing:.1, color:"#fff", transition:"all .2s", ...(disabled ? { background:"rgba(0,0,0,0.08)", color:"rgba(0,0,0,0.3)", boxShadow:"none", backdropFilter:"blur(10px)" } : G.btn(color))}}>
+            {label}
+        </button>
+    );
+}
+
+function Sheet({ children, py = 36 }) {
+    return (
+        <div style={{...G.sheet, borderRadius:"34px 34px 0 0", padding:`10px 0 ${py}px`, animation:"sheetUp .42s cubic-bezier(.32,0,.15,1)"}}>
+            <div style={{width:40, height:4, background:"rgba(0,0,0,0.1)", borderRadius:2, margin:"0 auto 22px"}}/>
+            {children}
+        </div>
+    );
+}
+
+function VSlider({ icon, value, onChange }) {
+    const ref = useRef(null);
+    const drag = useRef(false);
+    const upd = (e) => {
+        if (!ref.current) return;
+        const r = ref.current.getBoundingClientRect();
+        const y = e.touches ? e.touches[0].clientY : e.clientY;
+        let newVal = 1 - (y - r.top) / r.height;
+        newVal = Math.max(0, Math.min(1, newVal));
+        onChange(newVal);
+    };
+    const handleMove = (e) => { if (drag.current) upd(e); };
+    const handleUp = () => { drag.current = false; };
+    useEffect(() => {
+        window.addEventListener('mousemove', handleMove);
+        window.addEventListener('mouseup', handleUp);
+        window.addEventListener('touchmove', handleMove);
+        window.addEventListener('touchend', handleUp);
+        return () => {
+            window.removeEventListener('mousemove', handleMove);
+            window.removeEventListener('mouseup', handleUp);
+            window.removeEventListener('touchmove', handleMove);
+            window.removeEventListener('touchend', handleUp);
+        };
+    }, []);
+    return (
+        <div ref={ref} style={{...G.card, width:76, height:200, borderRadius:38, position:"relative", overflow:"hidden", cursor:"ns-resize", userSelect:"none"}}
+            onMouseDown={(e) => { drag.current = true; upd(e); }}
+            onTouchStart={(e) => { e.preventDefault(); drag.current = true; upd(e); }}>
+            <div style={{position:"absolute", bottom:0, left:0, right:0, height:`${value*100}%`, background:"rgba(255,255,255,0.86)", borderRadius:38, transition:"height .06s"}}/>
+            <div style={{position:"absolute", bottom:14, left:"50%", transform:"translateX(-50%)", zIndex:2, fontSize:18, mixBlendMode:"difference", filter:"invert(1)"}}>
+                {icon}
+            </div>
+        </div>
+    );
+}
+
+function TaxiAppleGlass() {
+    const [step, setStep] = useState(STEPS.HOME);
+    const [tariff, setTariff] = useState("comfort");
+    const [dest, setDest] = useState("");
+    const [inp, setInp] = useState("");
+    const [pct, setPct] = useState(0);
+    const [rideT, setRideT] = useState(0);
+    const [stars, setStars] = useState(0);
+    const [br, setBr] = useState(0.72);
+    const [vo, setVo] = useState(0.55);
+    const timer = useRef(null);
+    const sel = TARIFFS.find(t => t.id === tariff);
+
+    useEffect(() => {
+        clearInterval(timer.current);
+        if (step === STEPS.SEARCH) {
+            setPct(0);
+            timer.current = setInterval(() => setPct(p => { if (p >= 100) { clearInterval(timer.current); setStep(STEPS.FOUND); return 100; } return p + 3; }), 65);
+        }
+        if (step === STEPS.RIDE) {
+            setRideT(0);
+            timer.current = setInterval(() => setRideT(p => p + 1), 1000);
+        }
+        return () => clearInterval(timer.current);
+    }, [step]);
+
+    const fmt = (s) => `${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
+    const gTxt = (a,b) => ({ background:`linear-gradient(135deg,${a},${b})`, WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" });
+
+    return (
+        <div style={{position:"relative", height:"100vh", maxWidth:390, margin:"0 auto", fontFamily:"'Nunito',sans-serif", overflow:"hidden", background:"#000"}}>
+            <Map step={step} />
+            <StatusBar onBack={() => setStep(STEPS.HOME)} showBack={step !== STEPS.HOME} />
+            {step === STEPS.HOME && <ETAChip />}
+            <div style={{position:"absolute", bottom:0, left:0, right:0, zIndex:20}}>
+                {step === STEPS.HOME && (
+                    <Sheet>
+                        <div style={{padding:"0 22px"}}>
+                            <div style={{fontSize:26, fontWeight:900, color:"rgba(0,0,0,0.78)", marginBottom:18, letterSpacing:-.4}}>
+                                Куда <span style={gTxt("#5E9FFF","#BF5AF2")}>едем?</span>
+                            </div>
+                            <div style={{display:"flex", flexDirection:"column", gap:9, marginBottom:14}}>
+                                <GlassInput icon="⚬" placeholder="Текущее местоположение" value="" onChange={()=>{}} readOnly />
+                                <GlassInput icon="◎" placeholder="Куда?" value={inp} onChange={e => setInp(e.target.value)} />
+                            </div>
+                            <div style={{display:"flex", gap:8, marginBottom:18, flexWrap:"wrap"}}>
+                                {QUICK.map(l => (
+                                    <button key={l} onClick={() => setInp(l.split(" ").slice(1).join(" "))} className="tile" style={{...G.pill, border:"1px solid rgba(255,255,255,0.55)", borderRadius:50, padding:"8px 15px", fontSize:12, fontWeight:700, color:"rgba(0,0,0,0.56)", fontFamily:"'Nunito',sans-serif", background:"rgba(255,255,255,0.22)"}}>
+                                        {l}
+                                    </button>
+                                ))}
+                            </div>
+                            <CTABtn label={inp ? "Выбрать тариф →" : "Введите пункт назначения"} onClick={() => { if (inp) { setDest(inp); setStep(STEPS.SELECT); } }} color="#5E9FFF" disabled={!inp} />
+                        </div>
+                    </Sheet>
+                )}
+                {step === STEPS.SELECT && (
+                    <Sheet>
+                        <div style={{padding:"0 22px 14px"}}>
+                            <div style={{fontSize:22, fontWeight:900, color:"rgba(0,0,0,0.78)"}}>Тариф</div>
+                            <div style={{fontSize:12, color:"rgba(0,0,0,0.36)", fontWeight:600, marginTop:2}}>→ {dest}</div>
+                        </div>
+                        <div style={{display:"flex", gap:10, paddingLeft:22, overflowX:"auto", paddingRight:22, marginBottom:18}}>
+                            {TARIFFS.map(t => {
+                                const on = tariff === t.id;
+                                return (
+                                    <div key={t.id} onClick={() => setTariff(t.id)} className="tile" style={{flexShrink:0, width:108, background: on ? `rgba(255,255,255,0.44)` : "rgba(255,255,255,0.20)", backdropFilter:"blur(30px)", WebkitBackdropFilter:"blur(30px)", border: on ? `1.5px solid ${t.c}88` : "1px solid rgba(255,255,255,0.52)", borderRadius:26, padding:"17px 10px 15px", textAlign:"center", boxShadow: on ? `0 10px 28px ${t.c}28, inset 0 1.5px 0 rgba(255,255,255,0.9)` : "0 3px 12px rgba(0,0,0,0.05), inset 0 1.5px 0 rgba(255,255,255,0.78)", transform: on ? "scale(1.05)" : "scale(1)", transition:"all .22s cubic-bezier(.34,1.56,.64,1)"}}>
+                                        <div style={{fontSize:30}}>{t.e}</div>
+                                        <div style={{fontSize:12, fontWeight:900, marginTop:8, color: on ? t.c : "rgba(0,0,0,0.66)"}}>{t.n}</div>
+                                        <div style={{fontSize:10, color:"rgba(0,0,0,0.3)", fontWeight:600, marginTop:1}}>{t.t}</div>
+                                        <div style={{fontSize:16, fontWeight:900, marginTop:7, color: on ? t.c : "rgba(0,0,0,0.72)"}}>{t.p}₽</div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        <div style={{padding:"0 22px", display:"flex", gap:12, marginBottom:18, justifyContent:"center"}}>
+                            <VSlider icon="☀️" value={br} onChange={setBr} />
+                            <VSlider icon="🔊" value={vo} onChange={setVo} />
+                            <div style={{flex:1, display:"flex", flexDirection:"column", gap:10}}>
+                                <div style={{...G.card, borderRadius:22, padding:16, flex:1, display:"flex", flexDirection:"column", justifyContent:"space-between"}}>
+                                    <div style={{fontSize:22}}>💳</div>
+                                    <div><div style={{fontSize:12, fontWeight:800, color:"rgba(0,0,0,0.7)"}}>Карта</div><div style={{fontSize:11, color:"rgba(0,0,0,0.38)", fontWeight:600}}>•• 4812</div></div>
+                                </div>
+                                <div style={{...G.card, borderRadius:22, padding:14, display:"flex", flexDirection:"column", justifyContent:"space-between", alignItems:"center"}}>
+                                    <div style={{fontSize:20}}>🎁</div>
+                                    <div style={{fontSize:11, fontWeight:800, color:"rgba(0,0,0,0.65)", textAlign:"center", marginTop:6}}>Промо</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style={{padding:"0 22px"}}>
+                            <CTABtn label={`Продолжить · ${sel?.p} ₽`} onClick={() => setStep(STEPS.CONFIRM)} color={sel?.c || "#5E9FFF"} />
+                        </div>
+                    </Sheet>
+                )}
+                {step === STEPS.CONFIRM && (
+                    <Sheet>
+                        <div style={{padding:"0 22px"}}>
+                            <div style={{fontSize:22, fontWeight:900, color:"rgba(0,0,0,0.78)", marginBottom:16}}>Подтверждение</div>
+                            <div style={{...G.card, borderRadius:24, padding:18, marginBottom:14}}>
+                                {[["📍 Откуда","Текущее место"],["🏁 Куда",dest],["🚗 Тариф",sel?.n],["⏱ Подача",sel?.t],["💰 Цена",`${sel?.p} ₽`]].map(([k,v],i,a) => (
+                                    <div key={k} style={{display:"flex", justifyContent:"space-between", padding:"11px 0", borderBottom: i<a.length-1 ? "1px solid rgba(0,0,0,0.055)" : "none"}}>
+                                        <span style={{fontSize:13, color:"rgba(0,0,0,0.36)", fontWeight:600}}>{k}</span>
+                                        <span style={{fontSize:13, fontWeight:800, color:"rgba(0,0,0,0.72)"}}>{v}</span>
+                                    </div>
+                                ))}
+                            </div>
+                            <div style={{...G.card, borderRadius:17, padding:"12px 16px", marginBottom:16, background:"rgba(52,199,89,0.1)", border:"1px solid rgba(52,199,89,0.38)"}}>
+                                <span style={{fontSize:12, color:"rgba(25,130,60,0.9)", fontWeight:700}}>🛡️ Маршрут отслеживается · Застраховано</span>
+                            </div>
+                            <CTABtn label="🚀 Вызвать водителя" onClick={() => setStep(STEPS.SEARCH)} color={sel?.c || "#5E9FFF"} />
+                        </div>
+                    </Sheet>
+                )}
+                {step === STEPS.SEARCH && (
+                    <Sheet py={44}>
+                        <div style={{padding:"0 22px", textAlign:"center"}}>
+                            <div style={{position:"relative", width:104, height:104, margin:"0 auto 24px"}}>
+                                {[0,1,2].map(i => (
+                                    <div key={i} style={{position:"absolute", inset: i*13, borderRadius:"50%", border: `${1.5-i*.3}px solid rgba(94,159,255,${0.32-i*.08})`, animation: `ringPop ${1.7+i*.5}s ease-out infinite`, animationDelay: `${i*.38}s`}}/>
+                                ))}
+                                <div style={{position:"absolute", inset:28, borderRadius:"50%", ...G.btn(sel?.c || "#5E9FFF"), display:"flex", alignItems:"center", justifyContent:"center", fontSize:24}}>🚗</div>
+                            </div>
+                            <div style={{fontSize:22, fontWeight:900, color:"rgba(0,0,0,0.76)"}}>Ищем водителя</div>
+                            <div style={{fontSize:13, color:"rgba(0,0,0,0.36)", fontWeight:600, marginTop:6}}>Рейтинг 4.9+ · Только проверенные</div>
+                            <div style={{marginTop:22, ...G.card, borderRadius:12, height:6, overflow:"hidden", boxShadow:"inset 0 1px 4px rgba(0,0,0,0.07)"}}>
+                                <div style={{height:"100%", width:`${pct}%`, background:`linear-gradient(90deg,${sel?.c||"#5E9FFF"},#BF5AF2)`, borderRadius:12, transition:"width .065s linear"}}/>
+                            </div>
+                            <button onClick={() => setStep(STEPS.HOME)} className="tile" style={{marginTop:18, ...G.pill, border:"1px solid rgba(0,0,0,0.07)", borderRadius:50, padding:"10px 28px", color:"rgba(0,0,0,0.36)", fontSize:13, fontWeight:700, fontFamily:"'Nunito',sans-serif"}}>
+                                Отменить
+                            </button>
+                        </div>
+                    </Sheet>
+                )}
+                {step === STEPS.FOUND && (
+                    <Sheet>
+                        <div style={{padding:"0 22px"}}>
+                            <div style={{...G.card, borderRadius:26, padding:18, marginBottom:14, animation:"fadeScale .35s ease"}}>
+                                <div style={{display:"flex", gap:14, alignItems:"center"}}>
+                                    <div style={{width:62, height:62, borderRadius:20, ...G.pill, display:"flex", alignItems:"center", justifyContent:"center", fontSize:30, boxShadow:"inset 0 1.5px 0 rgba(255,255,255,0.85), 0 4px 16px rgba(0,0,0,0.08)"}}>👨‍✈️</div>
+                                    <div style={{flex:1}}>
+                                        <div style={{fontSize:17, fontWeight:900, color:"rgba(0,0,0,0.78)"}}>Алексей К.</div>
+                                        <div style={{fontSize:12, fontWeight:700, marginTop:2, ...gTxt("#FF9F0A","#FF375F")}}>★★★★★ 4.98 · 2 847 поездок</div>
+                                        <div style={{fontSize:11, color:"rgba(0,0,0,0.36)", fontWeight:600, marginTop:1}}>Toyota Camry · А 123 МК</div>
+                                    </div>
+                                    <div style={{...G.card, borderRadius:18, padding:"11px 14px", textAlign:"center", background:"rgba(94,159,255,0.14)", border:"1px solid rgba(94,159,255,0.38)"}}>
+                                        <div style={{fontSize:22, fontWeight:900, ...gTxt("#5E9FFF","#BF5AF2")}}>4</div>
+                                        <div style={{fontSize:8, color:"rgba(0,0,0,0.3)", textTransform:"uppercase", letterSpacing:1, fontWeight:700}}>мин</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style={{...G.card, borderRadius:20, padding:"14px 18px", marginBottom:14}}>
+                                <div style={{display:"flex", alignItems:"center", gap:10}}>
+                                    <div style={{width:8, height:8, borderRadius:"50%", background:"#5E9FFF", boxShadow:"0 0 0 3px rgba(94,159,255,0.2)", flexShrink:0}}/>
+                                    <span style={{fontSize:13, color:"rgba(0,0,0,0.45)", fontWeight:600, minWidth:50}}>Откуда</span>
+                                    <span style={{fontSize:13, fontWeight:700, color:"rgba(0,0,0,0.7)"}}>Текущее место</span>
+                                </div>
+                                <div style={{marginLeft:3, height:14, borderLeft:"1.5px dashed rgba(0,0,0,0.1)"}}/>
+                                <div style={{display:"flex", alignItems:"center", gap:10}}>
+                                    <div style={{width:8, height:8, borderRadius:2, background:"#FF375F", boxShadow:"0 0 0 3px rgba(255,63,89,0.2)", flexShrink:0}}/>
+                                    <span style={{fontSize:13, color:"rgba(0,0,0,0.45)", fontWeight:600, minWidth:50}}>Куда</span>
+                                    <span style={{fontSize:13, fontWeight:700, color:"rgba(0,0,0,0.7)"}}>{dest}</span>
+                                </div>
+                            </div>
+                            <div style={{display:"flex", gap:10, marginBottom:14}}>
+                                {[["📞",false],["💬",false],["🆘",true]].map(([ic,red],i) => (
+                                    <div key={i} className="tile" style={{flex:1, ...G.pill, borderRadius:999, padding:"15px", display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, background: red ? "rgba(255,59,48,0.09)" : "rgba(255,255,255,0.22)", border: red ? "1px solid rgba(255,59,48,0.25)" : "1px solid rgba(255,255,255,0.5)"}}>
+                                        {ic}
+                                    </div>
+                                ))}
+                            </div>
+                            <CTABtn label="Водитель приехал ✓" onClick={() => setStep(STEPS.RIDE)} color="#5E9FFF" />
+                        </div>
+                    </Sheet>
+                )}
+                {step === STEPS.RIDE && (
+                    <Sheet>
+                        <div style={{padding:"0 22px"}}>
+                            <div style={{textAlign:"center", marginBottom:18}}>
+                                <div style={{fontSize:11, color:"rgba(0,0,0,0.28)", textTransform:"uppercase", letterSpacing:2.5, fontWeight:700}}>Время в пути</div>
+                                <div style={{fontSize:58, fontWeight:900, ...gTxt("#5E9FFF","#BF5AF2"), lineHeight:1.1, fontVariantNumeric:"tabular-nums"}}>{fmt(rideT)}</div>
+                                <div style={{fontSize:12, color:"rgba(0,0,0,0.36)", fontWeight:700, marginTop:4}}>→ {dest}</div>
+                            </div>
+                            <div style={{...G.card, borderRadius:24, padding:"14px 18px", display:"flex", alignItems:"center", gap:14, marginBottom:14}}>
+                                <span style={{fontSize:30}}>👨‍✈️</span>
+                                <div style={{flex:1}}>
+                                    <div style={{fontWeight:900, color:"rgba(0,0,0,0.72)"}}>Алексей К.</div>
+                                    <div style={{fontSize:12, color:"rgba(0,0,0,0.36)", fontWeight:600}}>Toyota Camry · А 123 МК</div>
+                                </div>
+                                <div style={{display:"flex", gap:5}}>
+                                    {[0,1,2].map(i => <div key={i} style={{width:7, height:7, borderRadius:"50%", background: `linear-gradient(135deg,${sel?.c||"#5E9FFF"},#BF5AF2)`, animation:"dotBounce 1.4s ease infinite", animationDelay: `${i*.22}s`}}/>)}
+                                </div>
+                            </div>
+                            <CTABtn label="Завершить поездку" onClick={() => setStep(STEPS.RATE)} color="#FF375F" />
+                        </div>
+                    </Sheet>
+                )}
+                {step === STEPS.RATE && (
+                    <Sheet py={44}>
+                        <div style={{padding:"0 22px", textAlign:"center"}}>
+                            <div style={{fontSize:54, marginBottom:10}}>🏆</div>
+                            <div style={{fontSize:24, fontWeight:900, color:"rgba(0,0,0,0.78)"}}>Отличная поездка!</div>
+                            <div style={{fontSize:13, color:"rgba(0,0,0,0.36)", fontWeight:600, marginTop:6, marginBottom:24}}>Оцените водителя Алексея</div>
+                            <div style={{display:"flex", justifyContent:"center", gap:12, marginBottom:26}}>
+                                {[1,2,3,4,5].map(s => (
+                                    <span key={s} onClick={() => setStars(s)} className="tile" style={{fontSize:38, animation: s<=stars ? "starPop .2s ease" : "none", filter: s<=stars ? "none" : "grayscale(1) opacity(.28)"}}>⭐</span>
+                                ))}
+                            </div>
+                            <div style={{...G.card, borderRadius:18, padding:"13px 20px", display:"flex", justifyContent:"space-between", marginBottom:18}}>
+                                <span style={{fontSize:13, color:"rgba(0,0,0,0.38)", fontWeight:600}}>Итого</span>
+                                <span style={{fontSize:15, fontWeight:900, ...gTxt("#5E9FFF","#BF5AF2")}}>{sel?.p} ₽</span>
+                            </div>
+                            <CTABtn label={stars ? "Отправить оценку ✨" : "На главную"} onClick={() => { setStep(STEPS.HOME); setDest(""); setInp(""); setStars(0); }} color="#5E9FFF" />
+                        </div>
+                    </Sheet>
+                )}
+            </div>
+        </div>
+    );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<TaxiAppleGlass />);
+</script>
+</body>
+</html>
